@@ -1,0 +1,12 @@
+{
+  "address": "224 Muir Rd, Sharon, VT",
+  "area_size_km": 2.0,
+  "output_file": "muir_rd_terrain.stl",
+  "model_width_mm": 100,
+  "model_height_mm": 100,
+  "base_thickness_mm": 5,
+  "vertical_scale": 1.5,
+  "smooth_iterations": 1,
+  "data_source": "py3dep",
+  "opentopography_api_key": "your_api_key_here"
+}
