@@ -39,7 +39,20 @@ def generate_road_dxf(dem_file, roads_geojson, output_dxf, model_width_mm=100, m
     if roads_gdf.crs is None:
         roads_gdf.set_crs('EPSG:4326', inplace=True)
 
-    print(f"Found {len(roads_gdf)} road segments")
+    print(f"Loaded {len(roads_gdf)} road segments")
+
+    # Clip roads to DEM bounds
+    from shapely.geometry import box
+    dem_bbox = box(bounds.left, bounds.bottom, bounds.right, bounds.top)
+    roads_gdf = roads_gdf[roads_gdf.intersects(dem_bbox)]
+
+    # Clip the geometries to the bbox
+    roads_gdf['geometry'] = roads_gdf.geometry.intersection(dem_bbox)
+
+    # Remove any empty geometries
+    roads_gdf = roads_gdf[~roads_gdf.geometry.is_empty]
+
+    print(f"After clipping to DEM bounds: {len(roads_gdf)} road segments")
 
     # Create DXF document
     doc = ezdxf.new('R2010')
@@ -66,38 +79,46 @@ def generate_road_dxf(dem_file, roads_geojson, output_dxf, model_width_mm=100, m
 
     total_segments = 0
 
+    # Helper function to process a single linestring
+    def process_linestring(line):
+        nonlocal total_segments
+        coords = list(line.coords)
+        if len(coords) < 2:
+            return
+
+        # Convert coords from lat/lon to mm, with origin at (0,0)
+        points = []
+        for lon, lat in coords:
+            x_mm = (lon - origin_x) * scale_x
+            y_mm = (lat - origin_y) * scale_y
+            points.append((x_mm, y_mm))
+
+        # Add polyline to DXF
+        if len(points) >= 2:
+            msp.add_lwpolyline(points, dxfattribs={'layer': 'ROADS'})
+            total_segments += 1
+
     # Process each road
     for idx, road in roads_gdf.iterrows():
         geom = road.geometry
 
         # Handle LineString
         if geom.geom_type == 'LineString':
-            coords = list(geom.coords)
-            # Convert coords from lat/lon to mm, with origin at (0,0)
-            points = []
-            for lon, lat in coords:
-                x_mm = (lon - origin_x) * scale_x
-                y_mm = (lat - origin_y) * scale_y
-                points.append((x_mm, y_mm))
-
-            # Add polyline to DXF
-            if len(points) >= 2:
-                msp.add_lwpolyline(points, dxfattribs={'layer': 'ROADS'})
-                total_segments += 1
+            process_linestring(geom)
 
         # Handle MultiLineString
         elif geom.geom_type == 'MultiLineString':
             for line in geom.geoms:
-                coords = list(line.coords)
-                points = []
-                for lon, lat in coords:
-                    x_mm = (lon - origin_x) * scale_x
-                    y_mm = (lat - origin_y) * scale_y
-                    points.append((x_mm, y_mm))
+                process_linestring(line)
 
-                if len(points) >= 2:
-                    msp.add_lwpolyline(points, dxfattribs={'layer': 'ROADS'})
-                    total_segments += 1
+        # Handle GeometryCollection (can happen after clipping)
+        elif geom.geom_type == 'GeometryCollection':
+            for sub_geom in geom.geoms:
+                if sub_geom.geom_type == 'LineString':
+                    process_linestring(sub_geom)
+                elif sub_geom.geom_type == 'MultiLineString':
+                    for line in sub_geom.geoms:
+                        process_linestring(line)
 
     # Save DXF
     doc.saveas(output_dxf)
