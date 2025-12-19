@@ -56,15 +56,24 @@ Scale and position to match
 
 ### 4. Create Toolpath (CAM Workspace)
 
+**IMPORTANT: Use 3D → Project, NOT 2D → Trace**
+
+The Project toolpath is designed to project 2D curves onto 3D surfaces.
+
 ```
 Setup → New Setup → select terrain
-2D → Trace
-  - Geometry: Select your DXF road polylines
+3D → Project (NOT Trace!)
   - Tool: 1/16" or 1/8" ball nose
-  - Heights: Feed Height From "Model top", Offset 0
-  - Passes: Axial Offset = -0.5mm to -1.5mm (controls road depth)
-Simulate → verify roads appear as grooves
+  - Geometry: Select your DXF road polylines (under "Curves")
+  - Heights: Bottom Height offset = -0.02 to -0.06 in (-0.5 to -1.5mm)
+  - Linking: Projection Direction = -Z (down)
+Simulate → roads should follow terrain surface as grooves
 ```
+
+**Why Project instead of Trace?**
+- Trace follows 2D paths on flat planes
+- Project takes 2D curves and projects them onto 3D surfaces
+- Your terrain is a 3D surface, so Project is the correct tool
 
 ## Key Settings
 

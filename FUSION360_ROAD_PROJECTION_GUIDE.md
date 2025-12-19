@@ -136,42 +136,51 @@ If you want to create curves that follow the surface directly:
    - Set stock to "From Solid" selecting your terrain
    - Z-axis pointing up
 
-3. **Create Trace Toolpath:**
-   - 2D → Trace
-   - Tool: Select a small ball-nose or tapered bit (e.g., 1/16" or 1/8" ball)
+3. **Create Project Toolpath (Correct Method for 3D Surfaces):**
+
+   The Project toolpath is specifically designed to project 2D curves onto 3D surfaces.
+
+   - **3D → Project** (NOT 2D → Trace!)
+   - **Tool Tab:**
+     - Select a small ball-nose bit (1/16" or 1/8" ball)
+     - Smaller tools give finer detail, larger tools cut faster
 
    - **Geometry Tab:**
-     - Select your DXF road polylines
+     - Click "Select" under Curves
+     - Select your DXF road polylines from the sketch
+     - These are the 2D curves that will be projected
 
    - **Heights Tab:**
-     - **Feed Height** (where tool cuts):
-       - From: "Model top" (this makes tool follow terrain surface)
-       - Offset: 0 in (or set to match your Axial Offset from Passes tab)
-     - **Retract Height**: From "Stock top", Offset: 0.2 in (default is fine)
-     - **Clearance Height**: From "Retract height", Offset: 0.4 in (default is fine)
+     - **Bottom Height**:
+       - From: "Selected contour(s)" or "Model top"
+       - Offset: -0.02 in to -0.06 in (-0.5mm to -1.5mm)
+       - This negative offset controls road depth INTO the surface
+     - **Top Height** / **Retract Height**: Leave at defaults
+     - **Feed Height**: Usually "From contour" or similar
 
-   - **Passes Tab** (key settings for shallow decorative grooves):
-     - **Axial Offset**: -0.5mm to -1.5mm (this controls road depth!)
-       - Negative value cuts INTO the surface (deeper)
-       - Start with -0.5mm for subtle roads
-       - Use -1mm to -1.5mm for more visible grooves
-       - This offset is ADDED to Feed Height, so tool rides on surface then cuts down by this amount
-     - **Multiple Depths**: Enable if you want multiple passes for smoother finish
-     - **Stock to Leave**: Uncheck (we want full depth cut)
-     - **Tolerance**: 0.0004 in (default is fine for smooth curves)
-     - **Both Ways**: Uncheck unless you want bidirectional cutting
+   - **Passes Tab:**
+     - **Tolerance**: 0.001 in to 0.004 in (smaller = smoother but slower)
+     - **Maximum Stepover**: 50-75% of tool diameter
+     - **Optimal Load**: Not critical for shallow decorative cuts
+     - **Stock to Leave**:
+       - Radial: 0
+       - Axial: 0 (we want full depth)
 
-4. **OR Create 2D Contour Toolpath:**
-   - 2D → 2D Contour
-   - Select your road sketch/geometry
-   - Bottom Height: -0.5mm to -2mm (shallow groove depth)
-   - Multiple Depths: 1-2 passes
-   - Stock to Leave: 0mm
+   - **Linking Tab:**
+     - **Projection Direction**: Typically -Z (straight down)
+     - This determines how the 2D curves project onto the 3D surface
 
-5. **Simulate:**
+4. **Simulate:**
    - Click "Simulate" to preview
-   - Roads should appear as shallow grooves following terrain
-   - Adjust depth if needed (0.5-2mm typical for decorative)
+   - Roads should now follow the terrain surface as shallow grooves
+   - Verify the tool follows terrain contours while maintaining road pattern
+   - Adjust Bottom Height offset if roads are too shallow or too deep
+
+5. **Tips for Project Toolpath:**
+   - Start with -0.02 in (-0.5mm) offset for subtle roads
+   - Increase to -0.04 in (-1mm) or -0.06 in (-1.5mm) for more visible grooves
+   - The tool will project your 2D curves down onto the 3D terrain surface
+   - Unlike Trace, Project is designed specifically for 3D surface following
 
 ## Tips for Best Results
 
@@ -230,23 +239,32 @@ Note: PNG-to-vector conversion may require cleanup in Fusion 360, as it traces p
 
 ## Troubleshooting
 
+**Toolpath doesn't follow terrain surface (stays flat at top):**
+- **SOLUTION**: Use **3D → Project** toolpath, NOT 2D → Trace
+- Trace is designed for 2D paths on flat surfaces
+- Project is designed to project 2D curves onto 3D surfaces
+- This is the most common mistake!
+
 **Roads don't align with terrain:**
-- Check canvas is exactly 100mm x 100mm
-- Verify terrain STL is same as DEM used for road map
-- Use "Edit Canvas" to fine-tune position
+- Check DXF was generated from same DEM as terrain STL
+- Verify terrain is 100mm x 100mm (check bounding box)
+- Roads should auto-align if generated with generate_road_dxf.py
 
-**Can't create sketch on terrain surface:**
-- Ensure mesh is converted to BRep solid first
-- Create construction plane instead, then project
-
-**Toolpath doesn't follow surface:**
-- Use "Trace" not "2D Contour" for surface-following
-- Or use "3D Adaptive Clearing" with thin region for roads
+**Can't select road curves in Project toolpath:**
+- Make sure you imported DXF into a sketch on a construction plane
+- In Project, click "Select" under "Curves" in Geometry tab
+- Select the polylines from your sketch
 
 **Roads too shallow/deep:**
-- Adjust "Optimal Load" in trace toolpath
-- Or adjust "Bottom Height" in contour toolpath
+- Adjust "Bottom Height" offset in Heights tab
+- Start with -0.02 in (-0.5mm) for subtle roads
+- Increase to -0.04 in (-1mm) or -0.06 in (-1.5mm) for deeper grooves
 - Test on scrap material first
+
+**Toolpath is very slow/detailed:**
+- Increase Tolerance in Passes tab (0.004 in instead of 0.001 in)
+- Use larger tool diameter if detail allows
+- Reduce Maximum Stepover percentage
 
 ## Alternative: Multi-Material Inlay
 
