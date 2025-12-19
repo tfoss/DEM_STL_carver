@@ -144,17 +144,22 @@ If you want to create curves that follow the surface directly:
      - Select your DXF road polylines
 
    - **Heights Tab:**
-     - Bottom Height: "From Model" or "Selection" (projects onto terrain surface)
-     - Top Height: "Selection" with 0mm offset (or slightly above for clearance)
+     - **Feed Height** (where tool cuts):
+       - From: "Model top" (this makes tool follow terrain surface)
+       - Offset: 0 in (or set to match your Axial Offset from Passes tab)
+     - **Retract Height**: From "Stock top", Offset: 0.2 in (default is fine)
+     - **Clearance Height**: From "Retract height", Offset: 0.4 in (default is fine)
 
    - **Passes Tab** (key settings for shallow decorative grooves):
      - **Axial Offset**: -0.5mm to -1.5mm (this controls road depth!)
-       - Negative value cuts deeper
+       - Negative value cuts INTO the surface (deeper)
        - Start with -0.5mm for subtle roads
        - Use -1mm to -1.5mm for more visible grooves
-     - **Multiple Depths**: Enable if you want multiple passes
-     - **Stock to Leave**: Uncheck (we want full depth)
+       - This offset is ADDED to Feed Height, so tool rides on surface then cuts down by this amount
+     - **Multiple Depths**: Enable if you want multiple passes for smoother finish
+     - **Stock to Leave**: Uncheck (we want full depth cut)
      - **Tolerance**: 0.0004 in (default is fine for smooth curves)
+     - **Both Ways**: Uncheck unless you want bidirectional cutting
 
 4. **OR Create 2D Contour Toolpath:**
    - 2D → 2D Contour
