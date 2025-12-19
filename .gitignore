@@ -7,6 +7,9 @@ cache/
 # Generated STL files
 *.stl
 
+# Downloaded road data (can be regenerated)
+*_roads.geojson
+
 # Config with API keys (use config.example.json as template)
 config.json
 

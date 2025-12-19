@@ -50,6 +50,7 @@ class TerrainCarver:
                 'road_depth_m': 2.0,  # Depth of road indentation in meters
                 'road_width_m': 10.0,  # Width of roads in meters
                 'road_types': 'major',  # 'major' (main roads only) or 'all' (all driveable roads)
+                'roads_geojson_file': None,  # Optional: path to pre-downloaded GeoJSON file
             }
 
     def geocode_address(self, address):
@@ -245,7 +246,23 @@ class TerrainCarver:
             return self.download_dem_data_opentopography(bounds, output_dir)
 
     def download_roads(self, bounds):
-        """Download road data from OpenStreetMap using direct Overpass API query."""
+        """Download road data from OpenStreetMap or load from local GeoJSON file."""
+
+        # Check if user provided a local GeoJSON file
+        geojson_file = self.config.get('roads_geojson_file')
+        if geojson_file and os.path.exists(geojson_file):
+            print(f"Loading roads from local file: {geojson_file}")
+            try:
+                gdf = gpd.read_file(geojson_file)
+                # Ensure it has a CRS
+                if gdf.crs is None:
+                    gdf.set_crs('EPSG:4326', inplace=True)
+                print(f"Loaded {len(gdf)} road segments from file")
+                return gdf
+            except Exception as e:
+                print(f"Warning: Could not load GeoJSON file: {e}")
+                print("Falling back to Overpass API...")
+
         print("Downloading road data from OpenStreetMap...")
 
         try:
@@ -350,14 +367,16 @@ class TerrainCarver:
         pixel_width_m = pixel_width * meters_per_degree_lon
         pixel_height_m = pixel_height * meters_per_degree_lat
 
-        # Calculate buffer distance in degrees
-        buffer_deg_lon = (road_width_m / 2) / meters_per_degree_lon
-        buffer_deg_lat = (road_width_m / 2) / meters_per_degree_lat
-        buffer_deg = np.mean([buffer_deg_lon, buffer_deg_lat])
+        # Project to a local UTM coordinate system for accurate buffering in meters
+        # Determine UTM zone based on center longitude
+        lon_center = (self.bounds['west'] + self.bounds['east']) / 2
+        utm_zone = int((lon_center + 180) / 6) + 1
+        utm_crs = f'EPSG:{32600 + utm_zone}' if lat_center >= 0 else f'EPSG:{32700 + utm_zone}'
 
-        # Buffer the road geometries
-        roads_buffered = roads_gdf.copy()
-        roads_buffered['geometry'] = roads_buffered.geometry.buffer(buffer_deg)
+        # Project to UTM, buffer, then project back to WGS84
+        roads_buffered = roads_gdf.to_crs(utm_crs)
+        roads_buffered['geometry'] = roads_buffered.geometry.buffer(road_width_m / 2)  # Buffer in meters
+        roads_buffered = roads_buffered.to_crs('EPSG:4326')  # Back to WGS84 for rasterization
 
         # Create shapes for rasterization
         shapes = [(geom, 1) for geom in roads_buffered.geometry]

@@ -12,5 +12,7 @@
   "include_roads": true,
   "road_depth_m": 2.0,
   "road_width_m": 10.0,
-  "road_types": "major"
+  "road_types": "major",
+  "roads_geojson_file": null
 }
+

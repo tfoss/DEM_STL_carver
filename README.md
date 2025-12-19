@@ -154,7 +154,22 @@ The road carving feature downloads real road data from OpenStreetMap and "carves
 }
 ```
 
-**Note:** Road data is downloaded from public OpenStreetMap Overpass API servers. If the download times out, the script will continue without roads. The feature works best during off-peak hours or you can retry if servers are busy.
+**Note:** Road data is downloaded from public OpenStreetMap Overpass API servers. If the download times out, the script will continue without roads.
+
+### Cached Roads (Recommended)
+To avoid Overpass API timeouts, you can pre-download and cache road data:
+
+```bash
+# Download roads once and save to GeoJSON file
+python download_roads.py --south 43.8021 --west -72.4274 --north 43.8202 --east -72.4025 --output my_roads.geojson
+
+# Then add to config.json:
+{
+  "roads_geojson_file": "my_roads.geojson"
+}
+```
+
+The script will use the cached file instead of querying Overpass, making it instant and reliable.
 
 ## Choosing a Data Source
 
