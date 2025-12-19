@@ -628,7 +628,11 @@ class TerrainCarver:
         # Load elevation data
         self.load_elevation_data()
 
-        # Download and carve roads if requested
+        # Process elevation data (smoothing, void filling) BEFORE carving roads
+        # This prevents smoothing from blurring out the carved roads
+        self.process_elevation_data()
+
+        # Download and carve roads if requested (AFTER smoothing)
         if self.config.get('include_roads', False):
             roads_gdf = self.download_roads(self.bounds)
             if roads_gdf is not None:
@@ -639,9 +643,6 @@ class TerrainCarver:
                     self.config.get('road_width_m', 10.0),
                     self.config.get('road_depth_m', 2.0)
                 )
-
-        # Process elevation data
-        self.process_elevation_data()
 
         # Create mesh
         mesh = self.create_mesh()
