@@ -8,5 +8,9 @@
   "vertical_scale": 1.5,
   "smooth_iterations": 1,
   "data_source": "py3dep",
-  "opentopography_api_key": "your_api_key_here"
+  "opentopography_api_key": "your_api_key_here",
+  "include_roads": true,
+  "road_depth_m": 2.0,
+  "road_width_m": 10.0,
+  "road_types": "major"
 }

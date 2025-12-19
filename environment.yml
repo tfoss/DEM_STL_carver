@@ -11,6 +11,9 @@ dependencies:
   - geopy
   - trimesh
   - matplotlib
+  - shapely
+  - geopandas
+  - osmnx
   - pip
   - pip:
     - elevation

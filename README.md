@@ -9,6 +9,10 @@ Generate 3D terrain models from real elevation data for CNC carving. This tool d
   - **py3dep**: USGS 3DEP data (10m resolution, up to 1m for some areas) - Recommended!
   - **OpenTopography**: Global coverage with lidar support (sub-meter where available)
   - **SRTM**: Global 30m data (legacy option)
+- **Road carving**: Automatically carve roads into terrain as subtle indentations
+  - Downloads real road data from OpenStreetMap
+  - Configurable road width and depth
+  - Makes landmarks easier to identify in the final model
 - Configurable area size and model dimensions
 - Vertical exaggeration control for dramatic relief
 - Automatic void filling and optional smoothing
@@ -116,6 +120,41 @@ python terrain_carver.py --config config.json
   - `"srtm"` - SRTM 30m global data (requires GDAL)
 - **opentopography_api_key**: Your OpenTopography API key (required for opentopography sources)
   - Get a free key at: https://portal.opentopography.org/requestService
+- **include_roads**: Enable road carving (true/false) - adds roads as indentations in the terrain
+- **road_width_m**: Width of roads in meters (default: 10.0)
+  - Typical values: 5-15m depending on road type and model scale
+- **road_depth_m**: Depth of road indentation in meters (default: 2.0)
+  - Typical values: 1-5m - subtle but visible in the final carving
+
+## Road Carving Feature
+
+The road carving feature downloads real road data from OpenStreetMap and "carves" them into your terrain model as subtle indentations. This makes it much easier to identify landmarks and orient yourself on the model.
+
+**Benefits:**
+- Makes roads clearly visible on the carved model
+- Helps identify location of houses and landmarks
+- Creates more realistic and recognizable terrain
+- No additional API keys required (uses OpenStreetMap)
+
+**Configuration Tips:**
+- Start with defaults (`road_width_m: 10`, `road_depth_m: 2`, `road_types: "major"`)
+- For larger models (>200mm), you can use wider/deeper roads for visibility
+- For smaller models (<100mm), reduce width/depth to avoid overwhelming detail
+- Road depth is relative to terrain - a 2m indentation is subtle but visible
+- Use `road_types: "major"` for main roads only (faster, less clutter)
+- Use `road_types: "all"` to include residential streets (more detail, slower download)
+
+**Example:**
+```json
+{
+  "include_roads": true,
+  "road_width_m": 10.0,
+  "road_depth_m": 2.0,
+  "road_types": "major"
+}
+```
+
+**Note:** Road data is downloaded from public OpenStreetMap Overpass API servers. If the download times out, the script will continue without roads. The feature works best during off-peak hours or you can retry if servers are busy.
 
 ## Choosing a Data Source
 

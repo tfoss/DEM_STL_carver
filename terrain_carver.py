@@ -8,6 +8,7 @@ import json
 import numpy as np
 import rasterio
 from rasterio.warp import calculate_default_transform, reproject, Resampling
+from rasterio.features import rasterize
 import trimesh
 from geopy.geocoders import Nominatim
 from scipy import ndimage
@@ -15,6 +16,8 @@ import subprocess
 import tempfile
 import shutil
 import requests
+from shapely.geometry import LineString, MultiLineString
+import geopandas as gpd
 
 
 class TerrainCarver:
@@ -43,6 +46,10 @@ class TerrainCarver:
                 'smooth_iterations': 1,  # Number of smoothing passes
                 'data_source': 'py3dep',  # 'srtm', 'py3dep', or 'opentopography'
                 'opentopography_api_key': None,  # Required for opentopography
+                'include_roads': False,  # Whether to carve roads into terrain
+                'road_depth_m': 2.0,  # Depth of road indentation in meters
+                'road_width_m': 10.0,  # Width of roads in meters
+                'road_types': 'major',  # 'major' (main roads only) or 'all' (all driveable roads)
             }
 
     def geocode_address(self, address):
@@ -131,7 +138,7 @@ class TerrainCarver:
                 "DEM",
                 (bounds['west'], bounds['south'], bounds['east'], bounds['north']),
                 resolution=10,  # Target resolution in meters
-                crs="EPSG:4326"
+                crs=4326
             )
 
             # Save to GeoTIFF
@@ -236,6 +243,143 @@ class TerrainCarver:
             print(f"Error downloading lidar from OpenTopography: {e}")
             print("Falling back to standard DEM...")
             return self.download_dem_data_opentopography(bounds, output_dir)
+
+    def download_roads(self, bounds):
+        """Download road data from OpenStreetMap using direct Overpass API query."""
+        print("Downloading road data from OpenStreetMap...")
+
+        try:
+            from shapely.geometry import LineString
+            import json
+
+            # Create bounding box for OSM query
+            south, west, north, east = bounds['south'], bounds['west'], bounds['north'], bounds['east']
+
+            # Determine which road types to include based on config
+            road_types_mode = self.config.get('road_types', 'major')
+
+            if road_types_mode == 'major':
+                # Major roads only
+                print(f"Downloading major roads only...")
+                highway_filter = 'motorway|trunk|primary|secondary|tertiary'
+            else:
+                # All driveable roads
+                print(f"Downloading all driveable roads...")
+                highway_filter = 'motorway|trunk|primary|secondary|tertiary|residential|unclassified'
+
+            # Build Overpass QL query - much faster and more direct
+            overpass_query = f"""
+            [out:json][timeout:25];
+            (
+              way["highway"~"{highway_filter}"]({south},{west},{north},{east});
+            );
+            out geom;
+            """
+
+            print(f"Querying Overpass API for bounds: S:{south:.4f} W:{west:.4f} N:{north:.4f} E:{east:.4f}")
+
+            # Query Overpass API directly - try multiple servers
+            overpass_urls = [
+                "https://overpass.kumi.systems/api/interpreter",  # Try faster server first
+                "http://overpass-api.de/api/interpreter",  # Fallback to main server
+            ]
+
+            response = None
+            for url in overpass_urls:
+                try:
+                    print(f"Trying {url}...")
+                    response = requests.post(url, data={'data': overpass_query}, timeout=30)
+                    response.raise_for_status()
+                    break  # Success!
+                except (requests.exceptions.Timeout, requests.exceptions.HTTPError) as e:
+                    print(f"Failed with {url}: {e}")
+                    if url == overpass_urls[-1]:  # Last URL
+                        raise  # Re-raise if all URLs failed
+                    continue  # Try next URL
+
+            if response is None:
+                raise Exception("All Overpass API servers failed")
+
+            data = response.json()
+
+            # Extract geometries
+            geometries = []
+            for element in data.get('elements', []):
+                if element['type'] == 'way' and 'geometry' in element:
+                    coords = [(node['lon'], node['lat']) for node in element['geometry']]
+                    if len(coords) >= 2:
+                        geometries.append(LineString(coords))
+
+            if not geometries:
+                print("No roads found in this area")
+                return None
+
+            # Create GeoDataFrame
+            gdf = gpd.GeoDataFrame({'geometry': geometries}, crs='EPSG:4326')
+
+            print(f"Found {len(gdf)} road segments")
+
+            return gdf
+
+        except Exception as e:
+            print(f"Warning: Could not download road data: {e}")
+            print("Continuing without roads...")
+            return None
+
+    def rasterize_roads(self, roads_gdf, elevation_data, transform, road_width_m, road_depth_m):
+        """Burn roads into elevation data as indentations."""
+        if roads_gdf is None or len(roads_gdf) == 0:
+            return elevation_data
+
+        print(f"Carving {len(roads_gdf)} road segments into terrain...")
+        print(f"Road width: {road_width_m}m, depth: {road_depth_m}m")
+
+        # Create a copy of elevation data
+        carved_elevation = elevation_data.copy()
+
+        # Get the resolution in meters (approximate)
+        pixel_width = abs(transform[0])  # degrees per pixel
+        pixel_height = abs(transform[4])  # degrees per pixel
+
+        # Convert to meters (approximate at this latitude)
+        # Using the center of the bounds
+        lat_center = (self.bounds['north'] + self.bounds['south']) / 2
+        meters_per_degree_lon = 111320 * np.cos(np.radians(lat_center))
+        meters_per_degree_lat = 110574
+
+        pixel_width_m = pixel_width * meters_per_degree_lon
+        pixel_height_m = pixel_height * meters_per_degree_lat
+
+        # Calculate buffer distance in degrees
+        buffer_deg_lon = (road_width_m / 2) / meters_per_degree_lon
+        buffer_deg_lat = (road_width_m / 2) / meters_per_degree_lat
+        buffer_deg = np.mean([buffer_deg_lon, buffer_deg_lat])
+
+        # Buffer the road geometries
+        roads_buffered = roads_gdf.copy()
+        roads_buffered['geometry'] = roads_buffered.geometry.buffer(buffer_deg)
+
+        # Create shapes for rasterization
+        shapes = [(geom, 1) for geom in roads_buffered.geometry]
+
+        # Rasterize roads onto a mask
+        road_mask = rasterize(
+            shapes,
+            out_shape=elevation_data.shape,
+            transform=transform,
+            fill=0,
+            dtype=np.uint8
+        )
+
+        # Apply road indentation where mask is 1
+        # Subtract the road depth from elevation
+        carved_elevation = np.where(road_mask == 1,
+                                    elevation_data - road_depth_m,
+                                    elevation_data)
+
+        print(f"Roads carved into terrain (affected {np.sum(road_mask)} pixels)")
+
+        return carved_elevation
 
     def load_elevation_data(self, dem_file=None):
         """Load elevation data from GeoTIFF file."""
@@ -464,6 +608,18 @@ class TerrainCarver:
 
         # Load elevation data
         self.load_elevation_data()
+
+        # Download and carve roads if requested
+        if self.config.get('include_roads', False):
+            roads_gdf = self.download_roads(self.bounds)
+            if roads_gdf is not None:
+                self.elevation_data = self.rasterize_roads(
+                    roads_gdf,
+                    self.elevation_data,
+                    self.transform,
+                    self.config.get('road_width_m', 10.0),
+                    self.config.get('road_depth_m', 2.0)
+                )
 
         # Process elevation data
         self.process_elevation_data()
