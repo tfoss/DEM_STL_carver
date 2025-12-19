@@ -33,9 +33,33 @@ This gives you much cleaner results with precise control over road depth.
    - Wait for conversion (may take a minute)
    - You now have a solid body you can work with
 
-### Part 2: Project Road Map onto Surface
+### Part 2: Add Roads to Terrain
 
-#### Method A: Using Decal/Texture (Simpler)
+#### Method A: Import DXF (Recommended - Easiest!)
+
+1. **Generate DXF file:**
+   ```bash
+   python generate_road_dxf.py --dem dem_data/terrain.tif --roads muir_rd_roads_all.geojson --output muir_rd_roads.dxf --width 100 --height 100
+   ```
+   This creates a DXF file with roads as vector polylines, perfectly scaled to match your terrain dimensions.
+
+2. **Create Sketch on Terrain:**
+   - Create → Create Sketch
+   - Select the top face of your terrain
+   - This sketch will follow the 3D surface
+
+3. **Import DXF:**
+   - Sketch → Insert → Insert DXF
+   - Browse to `muir_rd_roads.dxf`
+   - Click OK
+   - Roads appear as polylines at exactly the right scale and position!
+   - No manual scaling or tracing needed!
+
+4. **Ready for CAM:**
+   - These polylines can now be used directly in your Trace toolpath
+   - Skip to Part 3 to create the toolpath
+
+#### Method B: Using Decal/Texture (Visualization Only)
 
 1. **Apply Decal to Surface:**
    - Switch to "Render" workspace (top toolbar)
@@ -48,9 +72,9 @@ This gives you much cleaner results with precise control over road depth.
 2. **Create Toolpath from Decal:**
    - Switch to "Manufacture" workspace
    - This method is primarily for visualization
-   - For actual toolpaths, use Method B
+   - For actual toolpaths, use Method A (DXF) or Method C (manual tracing)
 
-#### Method B: Using Sketch Projection (Better for CAM)
+#### Method C: Using Sketch Projection (Manual Tracing)
 
 1. **Create Reference Plane:**
    - Create → Construction Plane
@@ -80,7 +104,7 @@ This gives you much cleaner results with precise control over road depth.
    - Sketch → Insert → Insert DXF
    - (You'd need to convert PNG to DXF first - see below)
 
-#### Method C: Direct Surface Sketch (Most Precise)
+#### Method D: Direct Surface Sketch (Manual, Most Precise)
 
 1. **Create Sketch on Terrain Surface:**
    - Create → Create Sketch
@@ -155,9 +179,25 @@ This gives you much cleaner results with precise control over road depth.
 - **Reuse for variations:** Easy to adjust depth without re-tracing
 - **Multiple passes:** Do terrain roughing pass, then shallow road detail pass
 
-## Converting PNG to Vector (Advanced)
+## Generating Road Vectors
 
-For automatic tracing, convert PNG to DXF:
+### Method 1: Direct from GeoJSON (Recommended)
+
+Use the included script to generate perfect vector roads:
+
+```bash
+python generate_road_dxf.py --dem dem_data/terrain.tif --roads muir_rd_roads_all.geojson --output muir_rd_roads.dxf --width 100 --height 100
+```
+
+This creates a DXF with:
+- Roads as clean polylines (not rasterized)
+- Exact scale matching your terrain (100mm x 100mm)
+- Proper coordinate transformation from lat/lon
+- Ready for immediate import into Fusion 360
+
+### Method 2: Converting PNG to Vector (Alternative)
+
+If you only have the PNG road map:
 
 1. **Using Inkscape (free):**
    ```bash
@@ -170,10 +210,7 @@ For automatic tracing, convert PNG to DXF:
    - Upload `muir_rd_road_map.png`
    - Download DXF
 
-3. **Import to Fusion 360:**
-   - Sketch → Insert → Insert DXF
-   - Select road_map.dxf
-   - Roads import as vector splines (perfect for toolpaths!)
+Note: PNG-to-vector conversion may require cleanup in Fusion 360, as it traces pixels rather than using actual road geometry.
 
 ## Troubleshooting
 

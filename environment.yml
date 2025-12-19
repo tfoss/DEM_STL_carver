@@ -19,3 +19,4 @@ dependencies:
     - elevation
     - py3dep
     - pyproj
+    - ezdxf

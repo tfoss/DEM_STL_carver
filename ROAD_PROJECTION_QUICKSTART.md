@@ -4,8 +4,9 @@
 
 ### Files for Road Projection Workflow:
 1. **muir_rd_terrain_clean.stl** - Clean terrain without roads (12.81 MB)
-2. **muir_rd_road_map.png** - 2D road map image (304 x 221 pixels @ 300 DPI)
-3. **muir_rd_roads_all.geojson** - Raw road data (15 road segments)
+2. **muir_rd_roads.dxf** - Roads as vector polylines (DXF format for direct import)
+3. **muir_rd_road_map.png** - 2D road map image (304 x 221 pixels @ 300 DPI)
+4. **muir_rd_roads_all.geojson** - Raw road data (15 road segments)
 
 ### Model Specs:
 - **Dimensions**: 100mm x 100mm x ~50mm tall
@@ -25,9 +26,16 @@ Right-click mesh → Mesh to BRep
 (wait 1-2 minutes for conversion)
 ```
 
-### 3. Add Road Map
+### 3. Add Roads
 
-**Option A - As Canvas for Tracing:**
+**Option A - Import DXF (Recommended - No Tracing!):**
+```
+Create → Create Sketch → pick top of terrain
+Sketch → Insert → Insert DXF → select muir_rd_roads.dxf
+Roads import as perfect polylines at correct scale!
+```
+
+**Option B - Canvas for Manual Tracing:**
 ```
 Create → Create Sketch → pick top of terrain
 Sketch → Insert → Canvas → select muir_rd_road_map.png
@@ -35,7 +43,7 @@ Scale to 100mm x 100mm
 Trace roads with spline tool
 ```
 
-**Option B - As Decal (visualization only):**
+**Option C - Decal (visualization only):**
 ```
 Switch to Render workspace
 Select terrain → Appearance → Add Decal
@@ -116,8 +124,11 @@ See full guide: `FUSION360_ROAD_PROJECTION_GUIDE.md`
 To regenerate with different settings:
 
 ```bash
-# Generate new road map with different width
-python generate_road_map.py --dem dem_data/terrain.tif --roads muir_rd_roads_all.geojson --output my_road_map.png --width 5
+# Generate DXF vector roads (recommended)
+python generate_road_dxf.py --dem dem_data/terrain.tif --roads muir_rd_roads_all.geojson --output muir_rd_roads.dxf --width 100 --height 100
+
+# Or generate PNG road map for manual tracing
+python generate_road_map.py --dem dem_data/terrain.tif --roads muir_rd_roads_all.geojson --output muir_rd_road_map.png --width 5
 
 # Generate new terrain (adjust config.json first)
 python terrain_carver.py
