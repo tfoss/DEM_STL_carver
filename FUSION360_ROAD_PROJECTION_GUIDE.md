@@ -139,14 +139,22 @@ If you want to create curves that follow the surface directly:
 3. **Create Trace Toolpath:**
    - 2D → Trace
    - Tool: Select a small ball-nose or tapered bit (e.g., 1/16" or 1/8" ball)
-   - Geometry: Select your traced road splines
-   - Heights:
-     - Bottom Height: Offset from Selection, 0mm (rides on surface)
-     - Top Height: Offset from Selection, 0mm
-   - Passes:
-     - Optimal Load: 0.5mm (shallow decorative cut)
-     - Maximum Stepdown: 0.5mm
-   - Leave "Ramp" enabled for smooth entry
+
+   - **Geometry Tab:**
+     - Select your DXF road polylines
+
+   - **Heights Tab:**
+     - Bottom Height: "From Model" or "Selection" (projects onto terrain surface)
+     - Top Height: "Selection" with 0mm offset (or slightly above for clearance)
+
+   - **Passes Tab** (key settings for shallow decorative grooves):
+     - **Axial Offset**: -0.5mm to -1.5mm (this controls road depth!)
+       - Negative value cuts deeper
+       - Start with -0.5mm for subtle roads
+       - Use -1mm to -1.5mm for more visible grooves
+     - **Multiple Depths**: Enable if you want multiple passes
+     - **Stock to Leave**: Uncheck (we want full depth)
+     - **Tolerance**: 0.0004 in (default is fine for smooth curves)
 
 4. **OR Create 2D Contour Toolpath:**
    - 2D → 2D Contour

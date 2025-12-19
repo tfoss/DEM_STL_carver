@@ -59,10 +59,10 @@ Scale and position to match
 ```
 Setup → New Setup → select terrain
 2D → Trace
-  - Select your traced road splines
+  - Geometry: Select your DXF road polylines
   - Tool: 1/16" or 1/8" ball nose
-  - Bottom Height: 0mm (rides on surface)
-  - Optimal Load: 0.5-1.5mm (shallow decorative cut)
+  - Heights: Bottom Height "From Model" (projects onto surface)
+  - Passes: Axial Offset = -0.5mm to -1.5mm (controls road depth)
 Simulate → verify roads appear as grooves
 ```
 
