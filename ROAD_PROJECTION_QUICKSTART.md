@@ -30,14 +30,17 @@ Right-click mesh → Mesh to BRep
 
 **Option A - Import DXF (Recommended - No Tracing!):**
 ```
-Create → Create Sketch → pick top of terrain
+Create → Construction Plane → Offset from Plane (above terrain)
+Create → Create Sketch → select construction plane
 Sketch → Insert → Insert DXF → select muir_rd_roads.dxf
 Roads import as perfect polylines at correct scale!
+Trace toolpath will project them onto terrain surface
 ```
 
 **Option B - Canvas for Manual Tracing:**
 ```
-Create → Create Sketch → pick top of terrain
+Create → Construction Plane → Offset from Plane (above terrain)
+Create → Create Sketch → select construction plane
 Sketch → Insert → Canvas → select muir_rd_road_map.png
 Scale to 100mm x 100mm
 Trace roads with spline tool

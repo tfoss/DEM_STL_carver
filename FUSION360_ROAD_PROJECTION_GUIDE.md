@@ -43,20 +43,27 @@ This gives you much cleaner results with precise control over road depth.
    ```
    This creates a DXF file with roads as vector polylines, perfectly scaled to match your terrain dimensions.
 
-2. **Create Sketch on Terrain:**
-   - Create → Create Sketch
-   - Select the top face of your terrain
-   - This sketch will follow the 3D surface
+2. **Create Construction Plane:**
+   - Create → Construction Plane → Offset from Plane
+   - Select XY plane (or create one at terrain base)
+   - Offset to be slightly above terrain (e.g., 5-10mm above highest point)
+   - This gives you a flat reference plane for the DXF
 
-3. **Import DXF:**
+3. **Create Sketch on Construction Plane:**
+   - Create → Create Sketch
+   - Select your construction plane
+   - This creates a 2D sketch workspace
+
+4. **Import DXF:**
    - Sketch → Insert → Insert DXF
    - Browse to `muir_rd_roads.dxf`
    - Click OK
    - Roads appear as polylines at exactly the right scale and position!
    - No manual scaling or tracing needed!
 
-4. **Ready for CAM:**
+5. **Ready for CAM:**
    - These polylines can now be used directly in your Trace toolpath
+   - The Trace toolpath will project them down onto the terrain surface
    - Skip to Part 3 to create the toolpath
 
 #### Method B: Using Decal/Texture (Visualization Only)
@@ -104,23 +111,19 @@ This gives you much cleaner results with precise control over road depth.
    - Sketch → Insert → Insert DXF
    - (You'd need to convert PNG to DXF first - see below)
 
-#### Method D: Direct Surface Sketch (Manual, Most Precise)
+#### Method D: Alternative - Project Sketch onto Surface (Advanced)
 
-1. **Create Sketch on Terrain Surface:**
-   - Create → Create Sketch
-   - Select the top face of terrain
-   - This creates a sketch that follows the 3D surface!
+Note: The terrain BRep has many small faces, not a single "top face." The simpler approach is to use a construction plane (Methods A or C) and let the CAM Trace toolpath handle projection.
 
-2. **Project Canvas onto Surface:**
-   - With sketch active, go to Sketch → Insert → Canvas
-   - Load `muir_rd_road_map.png`
-   - Scale to 100mm x 100mm
-   - The canvas will drape over the 3D surface
+If you want to create curves that follow the surface directly:
 
-3. **Trace Roads:**
-   - Sketch → Spline or Sketch → Polyline
-   - Trace over the white road lines
-   - These lines now follow the terrain surface!
+1. **Create 2D Sketch First:**
+   - Use Method A (DXF) or Method C (Canvas) to create road curves on a construction plane
+
+2. **Project to Surface in CAM:**
+   - When creating the Trace toolpath, select "From Model" for bottom height
+   - The toolpath will automatically project your 2D curves onto the 3D terrain surface
+   - This is easier and more reliable than trying to sketch directly on the complex surface
 
 ### Part 3: Create CAM Toolpath
 
