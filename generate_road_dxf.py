@@ -44,6 +44,11 @@ def generate_road_dxf(dem_file, roads_geojson, output_dxf, model_width_mm=100, m
     # Create DXF document
     doc = ezdxf.new('R2010')
     doc.units = units.MM
+
+    # Set insertion units explicitly to millimeters (critical for Fusion 360)
+    # $INSUNITS: 4 = millimeters
+    doc.header['$INSUNITS'] = 4
+
     msp = doc.modelspace()
 
     # Create a layer for roads
